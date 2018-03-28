@@ -3,7 +3,7 @@
 [![npm Version](https://img.shields.io/npm/v/@medley/body-parser.svg)](https://www.npmjs.com/package/@medley/body-parser)
 [![Build Status](https://travis-ci.org/medleyjs/body-parser.svg?branch=master)](https://travis-ci.org/medleyjs/body-parser)
 [![Coverage Status](https://coveralls.io/repos/github/medleyjs/body-parser/badge.svg?branch=master)](https://coveralls.io/github/medleyjs/body-parser?branch=master)
-[![dependencies Status](https://david-dm.org/medleyjs/body-parser/status.svg)](https://david-dm.org/medleyjs/body-parser)
+[![dependencies Status](https://img.shields.io/david/medleyjs/body-parser.svg)](https://david-dm.org/medleyjs/body-parser)
 
 Essential body parsers for [Medley](https://github.com/medleyjs/medley).
 
