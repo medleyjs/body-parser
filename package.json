@@ -31,7 +31,7 @@
   ],
   "dependencies": {},
   "devDependencies": {
-    "@medley/medley": "^0.1.0",
+    "@medley/medley": "^0.2.0",
     "coveralls": "^3.0.0",
     "eslint": "^4.19.1",
     "got": "^8.3.0",
