@@ -14,26 +14,26 @@ describe('limit option', () => {
       it('should cause an error if it is not a number', () => {
         assert.throws(
           () => bodyParser[fnName]({limit: null}),
-          "The 'limit' option must be a number. Got value with type 'object'."
+          /The 'limit' option must be a number\. Got value with type 'object'\./
         );
       });
 
       it('should cause an error if it is not an integer > 0', () => {
         assert.throws(
           () => bodyParser[fnName]({limit: 0}),
-          "'limit' option must be an integer > 0. Got: 0"
+          /'limit' option must be an integer > 0\. Got: 0/
         );
         assert.throws(
           () => bodyParser[fnName]({limit: -10}),
-          "'limit' option must be an integer > 0. Got: -10"
+          /'limit' option must be an integer > 0\. Got: -10/
         );
         assert.throws(
           () => bodyParser[fnName]({limit: NaN}),
-          "'limit' option must be an integer > 0. Got: NaN"
+          /'limit' option must be an integer > 0\. Got: NaN/
         );
         assert.throws(
           () => bodyParser[fnName]({limit: Infinity}),
-          "'limit' option must be an integer > 0. Got: Infinity"
+          /'limit' option must be an integer > 0\. Got: Infinity/
         );
       });
 

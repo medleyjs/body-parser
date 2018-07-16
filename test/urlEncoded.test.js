@@ -65,11 +65,11 @@ describe('bodyParser.urlEncoded()', () => {
   it('should throw if the custom parser is not a function', () => {
     assert.throws(
       () => bodyParser.urlEncoded({parser: true}),
-      "The 'parser' option must be a function. Got value with type 'boolean'."
+      /The 'parser' option must be a function\. Got value with type 'boolean'\./
     );
     assert.throws(
       () => bodyParser.urlEncoded({parser: 20}),
-      "The 'parser' option must be a function. Got value with type 'number'."
+      /The 'parser' option must be a function\. Got value with type 'number'\./
     );
   });
 
