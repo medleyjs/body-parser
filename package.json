@@ -31,10 +31,11 @@
   ],
   "dependencies": {},
   "devDependencies": {
-    "@medley/medley": "^0.10.0",
+    "@medley/medley": "^0.11.0",
     "coveralls": "^3.0.4",
     "eslint": "^5.16.0",
     "got": "^9.6.0",
+    "light-my-request": "^3.4.0",
     "mocha": "^6.1.4",
     "nyc": "^14.1.1"
   },

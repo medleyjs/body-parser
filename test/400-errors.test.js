@@ -3,8 +3,14 @@
 const assert = require('assert');
 const bodyParser = require('../');
 const got = require('got');
+const lightMyRequest = require('light-my-request');
 const medley = require('@medley/medley');
 const stream = require('stream');
+
+async function inject(app, options) {
+  await app.load();
+  return lightMyRequest(app.server.listeners('request')[0], options);
+}
 
 describe('400 errors:', () => {
 
@@ -19,8 +25,8 @@ describe('400 errors:', () => {
 
         app.post('/', (req, res) => res.send());
 
-        // Must use inject to send a request with an incorrect Content-Length
-        return app.inject({
+        // Must use light-my-request to send a request with an incorrect Content-Length
+        return inject(app, {
           method: 'POST',
           url: '/',
           headers: {
@@ -44,7 +50,7 @@ describe('400 errors:', () => {
 
         app.post('/', (req, res) => res.send());
 
-        return app.inject({
+        return inject(app, {
           method: 'POST',
           url: '/',
           headers: {
