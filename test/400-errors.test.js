@@ -3,6 +3,7 @@
 const assert = require('assert');
 const bodyParser = require('../');
 const got = require('got');
+const http2 = require('http2');
 const lightMyRequest = require('light-my-request');
 const medley = require('@medley/medley');
 const stream = require('stream');
@@ -40,6 +41,46 @@ describe('400 errors:', () => {
             JSON.parse(res.payload).message,
             'Request body size did not match Content-Length'
           );
+        });
+      });
+
+      it('should return a 400 error if the body size does not match the default content length (0)', (done) => {
+        // Must use HTTP/2 to make a request without a Content-Length header
+        const app = medley({http2: true});
+
+        app.addBodyParser('test/type', bodyParser[fnName]());
+
+        app.post('/', (req, res) => res.send());
+
+        app.listen(0, (err) => {
+          app.server.unref();
+          assert.ifError(err);
+
+          const session = http2.connect(`http://localhost:${app.server.address().port}`);
+          let body = '';
+
+          session
+            .request({
+              ':method': 'POST',
+              ':path': '/',
+              'content-type': 'test/type',
+            })
+            .on('response', (headers) => {
+              session.close();
+              assert.strictEqual(headers[':status'], 400);
+            })
+            .on('data', (chunk) => {
+              body += chunk.toString();
+            })
+            .on('end', () => {
+              assert.strictEqual(
+                JSON.parse(body).message,
+                'Request body size did not match Content-Length'
+              );
+              done();
+            })
+            .on('error', done)
+            .end('1');
         });
       });
 
