@@ -10,24 +10,26 @@ const stream = require('stream');
 
 async function inject(app, options) {
   await app.load();
-  return lightMyRequest(app.server.listeners('request')[0], options);
+  return lightMyRequest(app.handler, options);
 }
 
 describe('400 errors:', () => {
 
-  ['buffer', 'text', 'json', 'urlEncoded'].forEach((fnName) => {
+  for (const fnName of Object.keys(bodyParser)) {
 
     describe(`when using bodyParser.${fnName}()`, () => {
 
-      it('should return a 400 error if the body size does not match the Content-Length header', () => {
+      it('should return a 400 error if the body size does not match the Content-Length header', async () => {
         const app = medley();
 
-        app.addBodyParser('test/type', bodyParser[fnName]());
-
-        app.post('/', (req, res) => res.send());
+        app.post('/', [
+          bodyParser[fnName]({type: 'test/type'}),
+        ], () => {
+          assert.fail('The handler should not run');
+        });
 
         // Must use light-my-request to send a request with an incorrect Content-Length
-        return inject(app, {
+        const res = await inject(app, {
           method: 'POST',
           url: '/',
           headers: {
@@ -35,22 +37,23 @@ describe('400 errors:', () => {
             'Content-Length': '2',
           },
           payload: '1',
-        }).then((res) => {
-          assert.strictEqual(res.statusCode, 400);
-          assert.strictEqual(
-            JSON.parse(res.payload).message,
-            'Request body size did not match Content-Length'
-          );
         });
+        assert.strictEqual(res.statusCode, 400);
+        assert.strictEqual(
+          JSON.parse(res.payload).message,
+          'Request body size did not match Content-Length'
+        );
       });
 
       it('should return a 400 error if the body size does not match the default content length (0)', (done) => {
         // Must use HTTP/2 to make a request without a Content-Length header
         const app = medley({http2: true});
 
-        app.addBodyParser('test/type', bodyParser[fnName]());
-
-        app.post('/', (req, res) => res.send());
+        app.post('/', [
+          bodyParser[fnName]({type: 'test/type'}),
+        ], () => {
+          assert.fail('The handler should not run');
+        });
 
         app.listen(0, (err) => {
           app.server.unref();
@@ -84,14 +87,16 @@ describe('400 errors:', () => {
         });
       });
 
-      it('should return a 400 error if the request errors', () => {
+      it('should return a 400 error if the request errors', async () => {
         const app = medley();
 
-        app.addBodyParser('test/type', bodyParser[fnName]());
+        app.post('/', [
+          bodyParser[fnName]({type: 'test/type'}),
+        ], () => {
+          assert.fail('The handler should not run');
+        });
 
-        app.post('/', (req, res) => res.send());
-
-        return inject(app, {
+        const res = await inject(app, {
           method: 'POST',
           url: '/',
           headers: {
@@ -99,16 +104,13 @@ describe('400 errors:', () => {
           },
           payload: '100',
           simulate: {error: true},
-        }).then((res) => {
-          assert.strictEqual(res.statusCode, 400);
-          assert.strictEqual(JSON.parse(res.payload).message, 'Simulated');
         });
+        assert.strictEqual(res.statusCode, 400);
+        assert.strictEqual(JSON.parse(res.payload).message, 'Simulated');
       });
 
       it('should return a 400 error if the request aborts', (done) => {
         const app = medley();
-
-        app.addBodyParser('test/type', bodyParser[fnName]());
 
         var request;
         var streamChunk = 'body';
@@ -121,13 +123,17 @@ describe('400 errors:', () => {
           next();
         });
 
-        app.setErrorHandler((err) => {
+        app.post('/', [
+          bodyParser[fnName]({type: 'test/type'}),
+        ], () => {
+          assert.fail('The handler should not run');
+        });
+
+        app.addHook('onError', (err) => {
           assert.strictEqual(err.status, 400);
           assert.strictEqual(err.message, 'Request aborted');
           app.close(done);
         });
-
-        app.post('/', (req, res) => res.send());
 
         app.listen(0, (err) => {
           if (err) {
@@ -157,6 +163,6 @@ describe('400 errors:', () => {
 
     });
 
-  });
+  }
 
 });

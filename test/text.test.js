@@ -2,34 +2,63 @@
 
 const assert = require('assert');
 const bodyParser = require('../');
-const got = require('got');
 const medley = require('@medley/medley');
+const selfRequest = require('@medley/self-request');
+
+function makeApp() {
+  return medley().register(selfRequest);
+}
 
 describe('bodyParser.text()', () => {
 
-  it('should parse the request body as a string', () => {
-    const app = medley();
+  it('should parse the request body as a string', async () => {
+    const app = makeApp();
 
-    app.addBodyParser('text/plain', bodyParser.text());
-
-    app.post('/', (req, res) => {
+    app.post('/', [bodyParser.text()], (req, res) => {
       assert.strictEqual(typeof req.body, 'string', 'req.body should be a string');
       res.send(req.body);
     });
 
-    return app.listen(0)
-      .then(() => {
-        app.server.unref();
-        return got.post(`http://localhost:${app.server.address().port}`, {
-          headers: {'Content-Type': 'text/plain'},
-          body: 'a string',
-        });
-      })
-      .then((res) => {
-        assert.strictEqual(res.statusCode, 200);
-        assert.strictEqual(res.headers['content-type'], 'text/plain; charset=utf-8');
-        assert.strictEqual(res.body, 'a string');
-      });
+    const res = await app.request({
+      method: 'POST',
+      url: '/',
+      headers: {
+        'Content-Type': 'text/plain',
+      },
+      body: 'a string',
+    });
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(res.headers['content-type'], 'text/plain; charset=utf-8');
+    assert.strictEqual(res.body, 'a string');
+  });
+
+  it('should not parse other types by default', async () => {
+    const app = makeApp();
+
+    app.post('/', [bodyParser.text()], (req, res) => {
+      assert.strictEqual(req.body, undefined);
+      res.send(String(req.body));
+    });
+
+    let res = await app.request({
+      method: 'POST',
+      url: '/',
+      headers: {
+        'Content-Type': 'test/type',
+      },
+      body: '123',
+    });
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(res.body, 'undefined');
+
+    // No Content-Type
+    res = await app.request({
+      method: 'POST',
+      url: '/',
+      body: '123',
+    });
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(res.body, 'undefined');
   });
 
 });

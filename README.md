@@ -17,10 +17,8 @@ This module provides the following parsers:
 ## Installation
 
 ```sh
-# npm
 npm install @medley/body-parser --save
-
-# yarn
+# or
 yarn add @medley/body-parser
 ```
 
@@ -30,34 +28,42 @@ yarn add @medley/body-parser
 const bodyParser = require('@medley/body-parser');
 ```
 
-The `bodyParser` object exposes various factory functions that create a body-parsing
-function that should be passed as the second argument to Medley's
-[`app.addBodyParser()`](https://github.com/medleyjs/medley/blob/master/docs/BodyParser.md#appaddbodyparser)
-method. All factory functions take an `options` object for configuration.
-
-The following describes each of the available factory functions.
-
----
-
-### `bodyParser.json([options])`
-
-Parses request bodies as JSON using
-[`JSON.parse()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse).
+The `bodyParser` module exposes various factory functions that create a body-parsing
+[`onRequest`/`preHandler` hook](https://github.com/medleyjs/medley/blob/master/docs/Hooks.md#onRequest-hook).
+All factory functions take an `options` object for configuration.
 
 ```js
 const bodyParser = require('@medley/body-parser');
 const medley = require('@medley/medley');
 const app = medley();
 
-app.addBodyParser('application/json', bodyParser.json());
+app.post('/user', {
+  preHandler: bodyParser.json()
+}, function handler(req, res) {
+  req.body // Contains the request body
+});
 ```
+
+**Note:** Using body-parsers as a route-level `preHandler` rather than a global
+`onRequest` hook is better for performance and security since this avoids
+running the hook for requests that don’t need it (such as `GET` requests and
+requests that don’t match a route). This also gives you more control over where
+the body-parser runs, allowing you to ensure that it will only run after things
+like authentication and authorization hooks.
+
+---
+
+### `bodyParser.json([options])`
+
+Returns a hook that parses request bodies as JSON using
+[`JSON.parse()`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse).
 
 #### Options
 
 ##### limit
 
-+ *number*
-+ Default: `1048576` (1 MiB)
+Type: `number`<br>
+Default: `1048576` (1 MiB)
 
 Specifies the maximum acceptable request body size.
 
@@ -65,28 +71,41 @@ Specifies the maximum acceptable request body size.
 bodyParser.json({limit: 100000})
 ```
 
+##### type
+
+Type: `string` | `Array<string>` | `function`<br>
+Default: `'application/json'`
+
+Determines whether or not to parse the request body based on the request’s
+media type. If a [MIME type] string or array of strings, it uses
+[`compile-mime-match`] to match against the request’s `Content-Type` header.
+If a function, it is called as `fn(req)` and the request will be parsed if
+the function returns a truthy value.
+
+```js
+bodyParser.json({type: '*/json'})
+```
+
+##### rejectUnsupportedTypes
+
+Type: `boolean`<br>
+Default: `false`
+
+Throw a `415 Unsupported Media Type` error if the request media type does not
+match the `type` option.
+
 ---
 
 ### `bodyParser.text([options])`
 
-Parses request bodies into a *string*.
-
-```js
-const bodyParser = require('@medley/body-parser');
-const medley = require('@medley/medley');
-const app = medley();
-
-app.addBodyParser('text/plain', bodyParser.text());
-// or
-app.addBodyParser('text/*', bodyParser.text());
-```
+Returns a hook that parses request bodies into a `string`.
 
 #### Options
 
 ##### limit
 
-+ *number*
-+ Default: `1048576` (1 MiB)
+Type: `number`<br>
+Default: `1048576` (1 MiB)
 
 Specifies the maximum acceptable request body size.
 
@@ -94,26 +113,41 @@ Specifies the maximum acceptable request body size.
 bodyParser.text({limit: 100000})
 ```
 
+##### type
+
+Type: `string` | `Array<string>` | `function`<br>
+Default: `'text/plain'`
+
+Determines whether or not to parse the request body based on the request’s
+media type. If a [MIME type] string or array of strings, it uses
+[`compile-mime-match`] to match against the request’s `Content-Type` header.
+If a function, it is called as `fn(req)` and the request will be parsed if
+the function returns a truthy value.
+
+```js
+bodyParser.text({type: 'text/*'})
+```
+
+##### rejectUnsupportedTypes
+
+Type: `boolean`<br>
+Default: `false`
+
+Throw a `415 Unsupported Media Type` error if the request media type does not
+match the `type` option.
+
 ---
 
 ### `bodyParser.urlEncoded([options])`
 
-Parses URL-encoded request bodies into an *object*.
-
-```js
-const bodyParser = require('@medley/body-parser');
-const medley = require('@medley/medley');
-const app = medley();
-
-app.addBodyParser('application/x-www-form-urlencoded', bodyParser.urlEncoded());
-```
+Returns a hook that parses URL-encoded request bodies into an `object`.
 
 #### Options
 
 ##### limit
 
-+ *number*
-+ Default: `1048576` (1 MiB)
+Type: `number`<br>
+Default: `1048576` (1 MiB)
 
 Specifies the maximum acceptable request body size.
 
@@ -121,13 +155,36 @@ Specifies the maximum acceptable request body size.
 bodyParser.urlEncoded({limit: 100000})
 ```
 
+##### type
+
+Type: `string` | `Array<string>` | `function`<br>
+Default: `'application/x-www-form-urlencoded'`
+
+Determines whether or not to parse the request body based on the request’s
+media type. If a [MIME type] string or array of strings, it uses
+[`compile-mime-match`] to match against the request’s `Content-Type` header.
+If a function, it is called as `fn(req)` and the request will be parsed if
+the function returns a truthy value.
+
+```js
+bodyParser.urlEncoded({type: '*/x-www-form-urlencoded'})
+```
+
+##### rejectUnsupportedTypes
+
+Type: `boolean`<br>
+Default: `false`
+
+Throw a `415 Unsupported Media Type` error if the request media type does not
+match the `type` option.
+
 ##### parser
 
-+ *function*
-+ Default: [`querystring.parse`](https://nodejs.org/api/querystring.html#querystring_querystring_parse_str_sep_eq_options)
+Type: `function`<br>
+Default: [`querystring.parse`](https://nodejs.org/api/querystring.html#querystring_querystring_parse_str_sep_eq_options)
 
-Specifies the function that will parse the request body as a string into an object. This can be used
-as a way to call `querystring.parse()` with options.
+Specifies the function that will parse the request body from a string into an
+object. This can be used as a way to call `querystring.parse()` with options.
 
 ```js
 const querystring = require('querystring');
@@ -143,27 +200,79 @@ bodyParser.urlEncoded({parser: customParser})
 
 ### `bodyParser.buffer([options])`
 
-Parses request bodies into a `Buffer`.
-
-```js
-const bodyParser = require('@medley/body-parser');
-const medley = require('@medley/medley');
-const app = medley();
-
-app.addBodyParser('application/octet-stream', bodyParser.buffer());
-// or to catch all requests
-app.addBodyParser('*/*', bodyParser.buffer());
-```
+Returns a hook that parses request bodies into a `Buffer`.
 
 #### Options
 
 ##### limit
 
-+ *number*
-+ Default: `1048576` (1 MiB)
+Type: `number`<br>
+Default: `1048576` (1 MiB)
 
 Specifies the maximum acceptable request body size.
 
 ```js
 bodyParser.buffer({limit: 100000})
 ```
+
+##### type
+
+Type: `string` | `Array<string>` | `function`<br>
+Default: `'application/octet-stream'`
+
+Determines whether or not to parse the request body based on the request’s
+media type. If a [MIME type] string or array of strings, it uses
+[`compile-mime-match`] to match against the request’s `Content-Type` header.
+If a function, it is called as `fn(req)` and the request will be parsed if
+the function returns a truthy value.
+
+```js
+bodyParser.buffer({type: 'image/png'})
+
+// Parse every request, regardless of its media type
+bodyParser.buffer({type: () => true})
+```
+
+##### rejectUnsupportedTypes
+
+Type: `boolean`<br>
+Default: `false`
+
+Throw a `415 Unsupported Media Type` error if the request media type does not
+match the `type` option.
+
+---
+
+### Reusable Hooks Pattern
+
+To avoid having to create a new hook for every route that needs one, a
+body-parser can be attached to an `app` using the
+[`app.decorate()`](https://github.com/medleyjs/medley/blob/master/docs/Decorators.md#decorate)
+method so it can easily be reused in multiple routes.
+
+```js
+const medley = require('@medley/medley');
+const bodyParser = require('@medley/body-parser');
+
+const app = medley();
+
+app.decorate('jsonBodyParser', bodyParser.json({
+  rejectUnsupportedTypes: true
+}));
+
+app.post('/user', {
+  preHandler: app.jsonBodyParser
+}, function handler(req, res) {
+  // ...
+});
+
+app.post('/comment', {
+  preHandler: app.jsonBodyParser
+}, function handler(req, res) {
+  // ...
+});
+```
+
+
+[MIME type]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types
+[`compile-mime-match`]: https://www.npmjs.com/package/compile-mime-match

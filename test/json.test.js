@@ -2,61 +2,83 @@
 
 const assert = require('assert');
 const bodyParser = require('../');
-const got = require('got');
 const medley = require('@medley/medley');
+const selfRequest = require('@medley/self-request');
+
+function makeApp() {
+  return medley().register(selfRequest);
+}
 
 describe('bodyParser.json()', () => {
 
-  it('should parse the request body as JSON', () => {
-    const app = medley();
+  it('should parse the request body as JSON', async () => {
+    const app = makeApp();
 
-    app.addBodyParser('application/json', bodyParser.json());
-
-    app.post('/', (req, res) => {
+    app.post('/', [bodyParser.json()], (req, res) => {
       assert.deepStrictEqual(req.body, {hello: 'world'});
       res.send(req.body);
     });
 
-    return app.listen(0)
-      .then(() => {
-        app.server.unref();
-        return got.post(`http://localhost:${app.server.address().port}`, {
-          body: {hello: 'world'},
-          json: true,
-        });
-      })
-      .then((res) => {
-        assert.strictEqual(res.statusCode, 200);
-        assert.strictEqual(res.headers['content-type'], 'application/json');
-        assert.deepStrictEqual(res.body, {hello: 'world'});
-      });
+    const res = await app.request({
+      method: 'POST',
+      url: '/',
+      body: {hello: 'world'},
+      json: true,
+    });
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(res.headers['content-type'], 'application/json');
+    assert.deepStrictEqual(res.body, {hello: 'world'});
   });
 
-  it('should return a 400 error for malformed JSON', () => {
-    const app = medley();
+  it('should not parse other types by default', async () => {
+    const app = makeApp();
 
-    app.addBodyParser('application/json', bodyParser.json());
+    app.post('/', [bodyParser.json()], (req, res) => {
+      assert.strictEqual(req.body, undefined);
+      res.send(String(req.body));
+    });
 
-    app.post('/', (req, res) => res.send());
+    let res = await app.request({
+      method: 'POST',
+      url: '/',
+      headers: {
+        'Content-Type': 'test/type',
+      },
+      body: '123',
+    });
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(res.body, 'undefined');
 
-    return app.listen(0)
-      .then(() => {
-        app.server.unref();
-        return got.post(`http://localhost:${app.server.address().port}`, {
-          headers: {'Content-Type': 'application/json'},
-          body: '{hello:',
-          throwHttpErrors: false,
-        });
-      })
-      .then((res) => {
-        assert.strictEqual(res.statusCode, 400);
-        assert.strictEqual(res.headers['content-type'], 'application/json');
-        assert.deepStrictEqual(JSON.parse(res.body), {
-          statusCode: 400,
-          error: 'Bad Request',
-          message: 'Unexpected token h in JSON at position 1',
-        });
-      });
+    // No Content-Type
+    res = await app.request({
+      method: 'POST',
+      url: '/',
+      body: '123',
+    });
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(res.body, 'undefined');
+  });
+
+  it('should return a 400 error for malformed JSON', async () => {
+    const app = makeApp();
+
+    app.post('/', [bodyParser.json()], (req, res) => res.send());
+
+    const res = await app.request({
+      method: 'POST',
+      url: '/',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: '{hello:',
+    });
+    assert.strictEqual(res.statusCode, 400);
+    assert.strictEqual(res.headers['content-type'], 'application/json');
+    assert.deepStrictEqual(JSON.parse(res.body), {
+      statusCode: 400,
+      error: 'Bad Request',
+      message: 'Unexpected token h in JSON at position 1',
+    });
   });
 
 });

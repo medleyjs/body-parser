@@ -2,64 +2,85 @@
 
 const assert = require('assert');
 const bodyParser = require('../');
-const got = require('got');
 const medley = require('@medley/medley');
 const querystring = require('querystring');
+const selfRequest = require('@medley/self-request');
+
+function makeApp() {
+  return medley().register(selfRequest);
+}
 
 describe('bodyParser.urlEncoded()', () => {
 
-  it('should parse the request body as a URL', () => {
-    const app = medley();
+  it('should parse the request body as a URL', async () => {
+    const app = makeApp();
 
-    app.addBodyParser('application/x-www-form-urlencoded', bodyParser.urlEncoded());
-
-    app.post('/', (req, res) => {
-      assert.equal(typeof req.body, 'object', 'req.body should be an object');
+    app.post('/', [bodyParser.urlEncoded()], (req, res) => {
+      assert.strictEqual(typeof req.body, 'object', 'req.body should be an object');
       res.send(req.body);
     });
 
-    return app.listen(0)
-      .then(() => {
-        app.server.unref();
-        return got.post(`http://localhost:${app.server.address().port}`, {
-          body: {hello: 'world', a: 1},
-          form: true,
-        });
-      })
-      .then((res) => {
-        assert.strictEqual(res.statusCode, 200);
-        assert.strictEqual(res.headers['content-type'], 'application/json');
-        assert.deepStrictEqual(JSON.parse(res.body), {hello: 'world', a: '1'});
-      });
+    const res = await app.request({
+      method: 'POST',
+      url: '/',
+      body: {hello: 'world', a: 1},
+      form: true,
+    });
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(res.headers['content-type'], 'application/json');
+    assert.deepStrictEqual(JSON.parse(res.body), {hello: 'world', a: '1'});
   });
 
-  it('should accept a custom parser', () => {
-    const app = medley();
+  it('should not parse other types by default', async () => {
+    const app = makeApp();
 
-    function parser(body) {
-      return querystring.parse(body, {maxKeys: 1});
-    }
+    app.post('/', [bodyParser.urlEncoded()], (req, res) => {
+      assert.strictEqual(req.body, undefined);
+      res.send(String(req.body));
+    });
 
-    app.addBodyParser('application/x-www-form-urlencoded', bodyParser.urlEncoded({parser}));
+    let res = await app.request({
+      method: 'POST',
+      url: '/',
+      headers: {
+        'Content-Type': 'test/type',
+      },
+      body: '123',
+    });
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(res.body, 'undefined');
 
-    app.post('/', (req, res) => {
-      assert.equal(typeof req.body, 'object', 'req.body should be an object');
+    // No Content-Type
+    res = await app.request({
+      method: 'POST',
+      url: '/',
+      body: '123',
+    });
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(res.body, 'undefined');
+  });
+
+  it('should accept a custom parser', async () => {
+    const app = makeApp();
+
+    app.post('/', [
+      bodyParser.urlEncoded({
+        parser: body => querystring.parse(body, {maxKeys: 1}),
+      }),
+    ], (req, res) => {
+      assert.strictEqual(typeof req.body, 'object', 'req.body should be an object');
       res.send(req.body);
     });
 
-    return app.listen(0)
-      .then(() => {
-        app.server.unref();
-        return got.post(`http://localhost:${app.server.address().port}`, {
-          body: {hello: 'world', a: 1},
-          form: true,
-        });
-      })
-      .then((res) => {
-        assert.strictEqual(res.statusCode, 200);
-        assert.strictEqual(res.headers['content-type'], 'application/json');
-        assert.deepStrictEqual(JSON.parse(res.body), {hello: 'world&a=1'});
-      });
+    const res = await app.request({
+      method: 'POST',
+      url: '/',
+      body: {hello: 'world', a: 1},
+      form: true,
+    });
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(res.headers['content-type'], 'application/json');
+    assert.deepStrictEqual(JSON.parse(res.body), {hello: 'world&a=1'});
   });
 
   it('should throw if the custom parser is not a function', () => {
@@ -73,34 +94,31 @@ describe('bodyParser.urlEncoded()', () => {
     );
   });
 
-  it('should return a 500 error if the custom parser throws', () => {
-    const app = medley();
+  it('should return a 500 error if the custom parser throws', async () => {
+    const app = makeApp();
 
-    function parser() {
-      throw new Error('parser error');
-    }
+    app.post('/', [
+      bodyParser.urlEncoded({
+        parser() {
+          throw new Error('parser error');
+        },
+      }),
+    ], () => {
+      assert.fail('The handler should not run');
+    });
 
-    app.addBodyParser('application/x-www-form-urlencoded', bodyParser.urlEncoded({parser}));
-
-    app.post('/', (req, res) => res.send());
-
-    return app.listen(0)
-      .then(() => {
-        app.server.unref();
-        return got.post(`http://localhost:${app.server.address().port}`, {
-          body: {hello: 'world', a: 1},
-          form: true,
-          throwHttpErrors: false,
-        });
-      })
-      .then((res) => {
-        assert.strictEqual(res.statusCode, 500);
-        assert.deepStrictEqual(JSON.parse(res.body), {
-          statusCode: 500,
-          error: 'Internal Server Error',
-          message: 'parser error',
-        });
-      });
+    const res = await app.request({
+      method: 'POST',
+      url: '/',
+      body: {hello: 'world', a: 1},
+      form: true,
+    });
+    assert.strictEqual(res.statusCode, 500);
+    assert.deepStrictEqual(JSON.parse(res.body), {
+      statusCode: 500,
+      error: 'Internal Server Error',
+      message: 'parser error',
+    });
   });
 
 });
