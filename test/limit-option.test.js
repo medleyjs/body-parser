@@ -16,14 +16,49 @@ describe('limit option', () => {
 
     describe(`passed to bodyParser.${fnName}()`, () => {
 
-      it('should cause an error if it is not a number', () => {
+      it('defaults to 100 KiB', async () => {
+        const app = makeApp();
+        const maxLength = 1024 * 100;
+
+        app.post('/', [
+          bodyParser[fnName]({type: '*/*'}),
+        ], (req, res) => {
+          res.send(String(req.body.length || maxLength));
+        });
+
+        let res = await app.request({
+          method: 'POST',
+          url: '/',
+          headers: {
+            'Content-Type': 'test/type',
+            'Content-Length': maxLength,
+          },
+          body: Buffer.alloc(maxLength, '1'),
+        });
+        assert.strictEqual(res.statusCode, 200);
+        assert.strictEqual(res.body, String(maxLength));
+
+        res = await app.request({
+          method: 'POST',
+          url: '/',
+          headers: {
+            'Content-Type': 'test/type',
+            'Content-Length': maxLength + 1,
+          },
+          body: Buffer.allocUnsafe(maxLength + 1),
+        });
+        assert.strictEqual(res.statusCode, 413);
+        assert.strictEqual(JSON.parse(res.body).message, 'Request body is too large');
+      });
+
+      it('causes an error if it is not a number', () => {
         assert.throws(
           () => bodyParser[fnName]({limit: null}),
           /The 'limit' option must be a number\. Got value with type 'object'\./
         );
       });
 
-      it('should cause an error if it is not an integer > 0', () => {
+      it('causes an error if it is not an integer > 0', () => {
         assert.throws(
           () => bodyParser[fnName]({limit: 0}),
           /'limit' option must be an integer > 0\. Got: 0/
@@ -42,7 +77,7 @@ describe('limit option', () => {
         );
       });
 
-      it('should cause a 413 error if the request Content-Length is larger than the limit', async () => {
+      it('causes a 413 error if the request Content-Length is larger than the limit', async () => {
         const app = makeApp();
 
         app.post('/', [
@@ -67,7 +102,7 @@ describe('limit option', () => {
         assert.strictEqual(JSON.parse(res.body).message, 'Request body is too large');
       });
 
-      it('should cause a 413 error if the request body is larger than the limit', async () => {
+      it('causes a 413 error if the request body is larger than the limit', async () => {
         const app = makeApp();
 
         let chunk = '123456';

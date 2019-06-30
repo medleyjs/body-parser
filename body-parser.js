@@ -6,7 +6,7 @@ const querystring = require('querystring');
 const createBufferParser = require('./lib/parsers/buffer');
 const createStringParser = require('./lib/parsers/string');
 
-const DEFAULT_LIMIT = 1024 * 1024; // 1 MiB
+const DEFAULT_LIMIT = 1024 * 100; // 100 KiB
 
 function validateLimit(limit) {
   if (typeof limit !== 'number') {

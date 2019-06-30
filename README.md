@@ -63,7 +63,7 @@ Returns a hook that parses request bodies as JSON using
 ##### limit
 
 Type: `number`<br>
-Default: `1048576` (1 MiB)
+Default: `102400` (100 KiB)
 
 Specifies the maximum acceptable request body size.
 
@@ -105,7 +105,7 @@ Returns a hook that parses request bodies into a `string`.
 ##### limit
 
 Type: `number`<br>
-Default: `1048576` (1 MiB)
+Default: `102400` (100 KiB)
 
 Specifies the maximum acceptable request body size.
 
@@ -147,7 +147,7 @@ Returns a hook that parses URL-encoded request bodies into an `object`.
 ##### limit
 
 Type: `number`<br>
-Default: `1048576` (1 MiB)
+Default: `102400` (100 KiB)
 
 Specifies the maximum acceptable request body size.
 
@@ -207,7 +207,7 @@ Returns a hook that parses request bodies into a `Buffer`.
 ##### limit
 
 Type: `number`<br>
-Default: `1048576` (1 MiB)
+Default: `102400` (100 KiB)
 
 Specifies the maximum acceptable request body size.
 
