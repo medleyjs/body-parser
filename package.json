@@ -1,6 +1,6 @@
 {
   "name": "@medley/body-parser",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Essential body parsers for Medley.",
   "main": "body-parser.js",
   "files": [
