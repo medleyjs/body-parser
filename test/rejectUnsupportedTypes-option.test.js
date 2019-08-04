@@ -58,7 +58,10 @@ describe('rejectUnsupportedTypes option', () => {
           body: '[]',
         });
         assert.strictEqual(res.statusCode, 415);
-        assert.strictEqual(JSON.parse(res.body).message, 'Unsupported media type');
+        assert.strictEqual(
+          JSON.parse(res.body).message,
+          'Unsupported media type: "unsupported/type"'
+        );
 
         // No types accepted
         res = await app.request({
@@ -70,7 +73,7 @@ describe('rejectUnsupportedTypes option', () => {
           body: '[]',
         });
         assert.strictEqual(res.statusCode, 415);
-        assert.strictEqual(JSON.parse(res.body).message, 'Unsupported media type');
+        assert.strictEqual(JSON.parse(res.body).message, 'Unsupported media type: "text/plain"');
 
         res = await app.request({ // No Content-Type
           method: 'POST',
@@ -78,7 +81,7 @@ describe('rejectUnsupportedTypes option', () => {
           body: '[]',
         });
         assert.strictEqual(res.statusCode, 415);
-        assert.strictEqual(JSON.parse(res.body).message, 'Unsupported media type');
+        assert.strictEqual(JSON.parse(res.body).message, 'Unsupported media type: "undefined"');
       });
 
     });
