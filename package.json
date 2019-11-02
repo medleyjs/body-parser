@@ -1,6 +1,6 @@
 {
   "name": "@medley/body-parser",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Essential body parsers for Medley.",
   "license": "MIT",
   "author": "Nathan Woltman <nwoltman@outlook.com>",
