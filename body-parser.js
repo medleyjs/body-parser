@@ -10,7 +10,9 @@ const DEFAULT_LIMIT = 1024 * 100; // 100 KiB
 
 function validateLimit(limit) {
   if (typeof limit !== 'number') {
-    throw new TypeError(`The 'limit' option must be a number. Got value with type '${typeof limit}'.`);
+    throw new TypeError(
+      `The 'limit' option must be a number. Got value with type '${typeof limit}'.`
+    );
   }
   if (!Number.isInteger(limit) || limit <= 0) {
     throw new RangeError(`'limit' option must be an integer > 0. Got: ${limit}`);
@@ -74,7 +76,9 @@ const bodyParser = {
     validateLimit(limit);
 
     if (typeof parser !== 'function') {
-      throw new TypeError(`The 'parser' option must be a function. Got value with type '${typeof parser}'.`);
+      throw new TypeError(
+        `The 'parser' option must be a function. Got value with type '${typeof parser}'.`
+      );
     }
 
     const matchMediaType = getMediaTypeMatcher(type);
