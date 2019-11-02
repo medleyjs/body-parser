@@ -38,8 +38,8 @@
     "compile-mime-match": "~0.1.0"
   },
   "devDependencies": {
-    "@medley/medley": "^0.12.0",
-    "@medley/self-request": "~0.3.0",
+    "@medley/medley": "^0.13.0",
+    "@medley/self-request": "^0.4.0",
     "@nwoltman/eslint-config": "^0.5.1",
     "coveralls": "^3.0.7",
     "eslint": "^6.6.0",

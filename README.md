@@ -247,7 +247,7 @@ match the `type` option.
 
 To avoid having to create a new hook for every route that needs one, a
 body-parser can be attached to an `app` using the
-[`app.decorate()`](https://github.com/medleyjs/medley/blob/master/docs/Decorators.md#decorate)
+[`app.extend()`](https://github.com/medleyjs/medley/blob/master/docs/Extensions.md#extend)
 method so it can easily be reused in multiple routes.
 
 ```js
@@ -256,7 +256,7 @@ const bodyParser = require('@medley/body-parser');
 
 const app = medley();
 
-app.decorate('jsonBodyParser', bodyParser.json({
+app.extend('jsonBodyParser', bodyParser.json({
   rejectUnsupportedTypes: true
 }));
 
