@@ -22,8 +22,8 @@ describe('bodyParser.json()', () => {
     const res = await app.request({
       method: 'POST',
       url: '/',
-      body: {hello: 'world'},
-      json: true,
+      json: {hello: 'world'},
+      responseType: 'json',
     });
     assert.strictEqual(res.statusCode, 200);
     assert.strictEqual(res.headers['content-type'], 'application/json');

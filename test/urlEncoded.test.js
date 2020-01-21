@@ -23,8 +23,7 @@ describe('bodyParser.urlEncoded()', () => {
     const res = await app.request({
       method: 'POST',
       url: '/',
-      body: {hello: 'world', a: 1},
-      form: true,
+      form: {hello: 'world', a: 1},
     });
     assert.strictEqual(res.statusCode, 200);
     assert.strictEqual(res.headers['content-type'], 'application/json');
@@ -75,8 +74,7 @@ describe('bodyParser.urlEncoded()', () => {
     const res = await app.request({
       method: 'POST',
       url: '/',
-      body: {hello: 'world', a: 1},
-      form: true,
+      form: {hello: 'world', a: 1},
     });
     assert.strictEqual(res.statusCode, 200);
     assert.strictEqual(res.headers['content-type'], 'application/json');
@@ -110,8 +108,7 @@ describe('bodyParser.urlEncoded()', () => {
     const res = await app.request({
       method: 'POST',
       url: '/',
-      body: {hello: 'world', a: 1},
-      form: true,
+      form: {hello: 'world', a: 1},
     });
     assert.strictEqual(res.statusCode, 500);
     assert.deepStrictEqual(JSON.parse(res.body), {
