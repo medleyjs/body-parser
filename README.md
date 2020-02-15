@@ -17,7 +17,7 @@ This module provides the following parsers:
 ## Installation
 
 ```sh
-npm install @medley/body-parser --save
+npm install @medley/body-parser
 # or
 yarn add @medley/body-parser
 ```
